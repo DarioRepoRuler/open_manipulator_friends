@@ -70,16 +70,20 @@ class OpenManipulatorController
   bool using_platform_;
   bool using_moveit_;
   double control_period_;
-
+  std::string controller_;
+  double current_joint_position_[9];
+  double current_joint_velocity_[9];
   // ROS Publisher
   ros::Publisher open_manipulator_states_pub_;
   std::vector<ros::Publisher> open_manipulator_kinematics_pose_pub_;
   ros::Publisher open_manipulator_joint_states_pub_;
   std::vector<ros::Publisher> gazebo_goal_joint_position_pub_;
+  std::vector<ros::Publisher> gazebo_goal_joint_torque_pub_;
   ros::Publisher moveit_update_start_state_;
 
   // ROS Subscribers
   ros::Subscriber open_manipulator_option_sub_;
+  ros::Subscriber open_manipulator_joint_states_sub_;
   ros::Subscriber display_planned_path_sub_;
   ros::Subscriber move_group_goal_sub_;
   ros::Subscriber execute_traj_goal_sub_;
@@ -124,7 +128,7 @@ class OpenManipulatorController
 
  public:
 
-  OpenManipulatorController(std::string usb_port, std::string baud_rate);
+  OpenManipulatorController(std::string usb_port, std::string baud_rate, std::string controller);
   ~OpenManipulatorController();
 
   void publishCallback(const ros::TimerEvent&);
@@ -138,6 +142,7 @@ class OpenManipulatorController
   void displayPlannedPathCallback(const moveit_msgs::DisplayTrajectory::ConstPtr &msg);
   void moveGroupGoalCallback(const moveit_msgs::MoveGroupActionGoal::ConstPtr &msg);
   void executeTrajGoalCallback(const moveit_msgs::ExecuteTrajectoryActionGoal::ConstPtr &msg);
+  void jointStatesCallback(const sensor_msgs::JointState &msg);
 
   double getControlPeriod(void){return control_period_;}
 

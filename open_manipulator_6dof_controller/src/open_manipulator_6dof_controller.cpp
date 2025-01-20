@@ -24,7 +24,7 @@
 
 using namespace open_manipulator_controller;
 
-OpenManipulatorController::OpenManipulatorController(std::string usb_port, std::string baud_rate)
+OpenManipulatorController::OpenManipulatorController(std::string usb_port, std::string baud_rate, std::string controller)
     :node_handle_(""),
      priv_node_handle_("~"),
      tool_ctrl_state_(false),
@@ -36,13 +36,14 @@ OpenManipulatorController::OpenManipulatorController(std::string usb_port, std::
      control_period_(0.010f),
      moveit_sampling_time_(0.050f)
 {
+  controller_ = controller;
   control_period_       = priv_node_handle_.param<double>("control_period", 0.010f);
   moveit_sampling_time_ = priv_node_handle_.param<double>("moveit_sample_duration", 0.050f);
   using_platform_       = priv_node_handle_.param<bool>("using_platform", false);
   using_moveit_         = priv_node_handle_.param<bool>("using_moveit", false);
   std::string planning_group_name = priv_node_handle_.param<std::string>("planning_group_name", "arm");
 
-  open_manipulator_.initOpenManipulator(using_platform_, usb_port, baud_rate, control_period_);
+  open_manipulator_.initOpenManipulator(using_platform_, usb_port, baud_rate, control_period_ );
 
   if (using_platform_ == true)        log::info("Succeeded to init " + priv_node_handle_.getNamespace());
   else if (using_platform_ == false)  log::info("Ready to simulate " +  priv_node_handle_.getNamespace() + " on Gazebo");
@@ -160,6 +161,13 @@ void OpenManipulatorController::initPublisher()
       pb = priv_node_handle_.advertise<std_msgs::Float64>(name + "_position/command", 10);
       gazebo_goal_joint_position_pub_.push_back(pb);
     }
+    for (auto const& name:gazebo_joints_name)
+    {
+      ros::Publisher pb;
+      pb = priv_node_handle_.advertise<std_msgs::Float64>(name + "_effort/command", 10);
+      gazebo_goal_joint_torque_pub_.push_back(pb);
+    }
+
   }
   if (using_moveit_ == true)
   {
@@ -170,6 +178,7 @@ void OpenManipulatorController::initSubscriber()
 {
   // ros message subscriber
   open_manipulator_option_sub_ = priv_node_handle_.subscribe("option", 10, &OpenManipulatorController::openManipulatorOptionCallback, this);
+  
   if (using_moveit_ == true)
   {
     display_planned_path_sub_ = node_handle_.subscribe("/move_group/display_planned_path", 100,
@@ -178,6 +187,9 @@ void OpenManipulatorController::initSubscriber()
                                                        &OpenManipulatorController::moveGroupGoalCallback, this);
     execute_traj_goal_sub_ = node_handle_.subscribe("/execute_trajectory/goal", 100,
                                                        &OpenManipulatorController::executeTrajGoalCallback, this);
+  }
+  else {
+    open_manipulator_joint_states_sub_ = priv_node_handle_.subscribe("joint_states", 10, &OpenManipulatorController::jointStatesCallback, this);
   }
 }
 
@@ -217,6 +229,24 @@ void OpenManipulatorController::openManipulatorOptionCallback(const std_msgs::St
     open_manipulator_.printManipulatorSetting();
   if(msg->data == "switching_kinematics")
     open_manipulator_.switchingKinematics();
+}
+void OpenManipulatorController::jointStatesCallback(const sensor_msgs::JointState &msg)
+{
+  for(int i = 0; i < 8; i ++)
+  {
+    // construct the string before printing
+    // joint_sting = "joint_position[" + std::to_string(i) + "] : " + std::to_string(joint_position.at(i));
+    // log::info(std::to_string(joint_position.size()));
+    current_joint_position_[i] = msg.position.at(i);
+    current_joint_velocity_[i] = msg.velocity.at(i);
+  }
+
+  // joint_sting = "joint_position : ";
+  // for(int i = 0; i < 8; i ++)
+  // {
+  //   joint_sting = joint_sting +" " +std::to_string(current_joint_position_[i]);
+  // } 
+  //log::info(joint_sting);
 }
 
 void OpenManipulatorController::displayPlannedPathCallback(const moveit_msgs::DisplayTrajectory::ConstPtr &msg)
@@ -732,22 +762,56 @@ void OpenManipulatorController::publishJointStates()
 void OpenManipulatorController::publishGazeboCommand()
 {
   JointWaypoint joint_value = open_manipulator_.getAllActiveJointValue();
+  
   JointWaypoint tool_value = open_manipulator_.getAllToolValue();
+  // std::string joint_string = "joint_position : ";
+  // std::string joint_vel_string = "joint_velocity : ";
+  // for(int i = 0; i < 6; i ++)
+  // {
+  //     joint_value.at(i).effort = 100 * (joint_value.at(i).position - current_joint_position_[i+2] ) - 1.0 * current_joint_velocity_[i+2];
+  //     joint_string = joint_string +" " +std::to_string(current_joint_position_[i]);
+  //     joint_vel_string = joint_vel_string +" " +std::to_string(current_joint_velocity_[i]);
+  // } 
+  // log::info(joint_string);
+  // log::info(joint_vel_string);
+  // log::info("Controller type: ", controller_);
+  if(controller_ == "position"){
+    log::info("Position based control");
+    for(uint8_t i = 0; i < joint_value.size(); i ++)
+    {
+      std_msgs::Float64 msg;
+      msg.data = joint_value.at(i).position;
 
-  for(uint8_t i = 0; i < joint_value.size(); i ++)
-  {
-    std_msgs::Float64 msg;
-    msg.data = joint_value.at(i).position;
+      gazebo_goal_joint_position_pub_.at(i).publish(msg);
+    }
 
-    gazebo_goal_joint_position_pub_.at(i).publish(msg);
+    for(uint8_t i = 0; i < tool_value.size(); i ++)
+    {
+      std_msgs::Float64 msg;
+      msg.data = tool_value.at(i).position;
+
+      gazebo_goal_joint_position_pub_.at(joint_value.size() + i).publish(msg);
+    }
   }
+  else if(controller_ =="torque"){
+    for(uint8_t i = 0; i < joint_value.size(); i ++)
+    {
+      log::info("joint_value.at(i).position : ", joint_value.at(i).position);
+      log::info("current_joint_position_[i+2] : ", current_joint_position_[i+2]);
+      std_msgs::Float64 msg;
+      joint_value.at(i).effort = 100 * (joint_value.at(i).position - current_joint_position_[i+2] ) - 1.0 * current_joint_velocity_[i+2];
+      msg.data = joint_value.at(i).effort;
 
-  for(uint8_t i = 0; i < tool_value.size(); i ++)
-  {
-    std_msgs::Float64 msg;
-    msg.data = tool_value.at(i).position;
+      gazebo_goal_joint_torque_pub_.at(i).publish(msg);
+    }
 
-    gazebo_goal_joint_position_pub_.at(joint_value.size() + i).publish(msg);
+    for(uint8_t i = 0; i < tool_value.size(); i ++)
+    {
+      std_msgs::Float64 msg;
+      msg.data = tool_value.at(i).position;
+
+      gazebo_goal_joint_position_pub_.at(joint_value.size() + i).publish(msg);
+    }
   }
 }
 
@@ -818,6 +882,7 @@ int main(int argc, char **argv)
 
   std::string usb_port = "/dev/ttyUSB0";
   std::string baud_rate = "1000000";
+  std::string controller = "torque";
 
   if (argc < 3)
   {
@@ -830,7 +895,7 @@ int main(int argc, char **argv)
     baud_rate = argv[2];
   }
 
-  OpenManipulatorController om_controller(usb_port, baud_rate);
+  OpenManipulatorController om_controller(usb_port, baud_rate, controller);
 
   om_controller.initPublisher();
   om_controller.initSubscriber();
