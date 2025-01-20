@@ -764,17 +764,7 @@ void OpenManipulatorController::publishGazeboCommand()
   JointWaypoint joint_value = open_manipulator_.getAllActiveJointValue();
   
   JointWaypoint tool_value = open_manipulator_.getAllToolValue();
-  // std::string joint_string = "joint_position : ";
-  // std::string joint_vel_string = "joint_velocity : ";
-  // for(int i = 0; i < 6; i ++)
-  // {
-  //     joint_value.at(i).effort = 100 * (joint_value.at(i).position - current_joint_position_[i+2] ) - 1.0 * current_joint_velocity_[i+2];
-  //     joint_string = joint_string +" " +std::to_string(current_joint_position_[i]);
-  //     joint_vel_string = joint_vel_string +" " +std::to_string(current_joint_velocity_[i]);
-  // } 
-  // log::info(joint_string);
-  // log::info(joint_vel_string);
-  // log::info("Controller type: ", controller_);
+
   if(controller_ == "position"){
     log::info("Position based control");
     for(uint8_t i = 0; i < joint_value.size(); i ++)
@@ -796,8 +786,6 @@ void OpenManipulatorController::publishGazeboCommand()
   else if(controller_ =="torque"){
     for(uint8_t i = 0; i < joint_value.size(); i ++)
     {
-      log::info("joint_value.at(i).position : ", joint_value.at(i).position);
-      log::info("current_joint_position_[i+2] : ", current_joint_position_[i+2]);
       std_msgs::Float64 msg;
       joint_value.at(i).effort = 100 * (joint_value.at(i).position - current_joint_position_[i+2] ) - 1.0 * current_joint_velocity_[i+2];
       msg.data = joint_value.at(i).effort;
