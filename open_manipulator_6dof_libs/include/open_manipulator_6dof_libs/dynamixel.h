@@ -80,6 +80,7 @@ class JointDynamixel : public robotis_manipulator::JointActuator
 private:
   DynamixelWorkbench *dynamixel_workbench_;
   Joint dynamixel_;
+  STRING control_mode_;
 
 public:
   JointDynamixel(){}
@@ -108,6 +109,7 @@ public:
   bool setSDKHandler(uint8_t actuator_id);
   bool writeProfileValue(std::vector<uint8_t> actuator_id, STRING profile_mode, uint32_t value);
   bool writeGoalPosition(std::vector<uint8_t> actuator_id, std::vector<double> radian_vector);
+  bool writeGoalTorque(std::vector<uint8_t> actuator_id, std::vector<double> torque_vector);
   std::vector<robotis_manipulator::ActuatorValue> receiveAllDynamixelValue(std::vector<uint8_t> actuator_id);
 };
 
@@ -187,7 +189,3 @@ class GripperDynamixel : public robotis_manipulator::ToolActuator
 
 } // namespace DYNAMIXEL
 #endif // DYNAMIXEL_H_
-
-
-
-

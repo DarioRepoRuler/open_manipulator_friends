@@ -33,7 +33,7 @@ OpenManipulator::~OpenManipulator()
     delete custom_trajectory_[index];
 }
 
-void OpenManipulator::initOpenManipulator(bool using_actual_robot_state, STRING usb_port, STRING baud_rate, float control_loop_time)
+void OpenManipulator::initOpenManipulator(bool using_actual_robot_state, STRING usb_port, STRING baud_rate, float control_loop_time, STRING joint_dxl_mode_arg)
 {
   /*****************************************************************************
   ** Initialize Manipulator Parameter 
@@ -118,7 +118,7 @@ void OpenManipulator::initOpenManipulator(bool using_actual_robot_state, STRING 
   //kinematics_ = new kinematics::SolverUsingCRAndSRPositionOnlyJacobian();
   addKinematics(kinematics_);
 
-  if(using_actual_robot_state)
+  if(using_actual_robot_state) // This will set the actuators 
   {
     /*****************************************************************************
     ** Initialize Joint Actuator
@@ -141,54 +141,75 @@ void OpenManipulator::initOpenManipulator(bool using_actual_robot_state, STRING 
     addJointActuator(JOINT_DYNAMIXEL, actuator_, jointDxlId, p_dxl_comm_arg);
 
     // Set joint actuator control mode
-    STRING joint_dxl_mode_arg = "position_mode";
-    void *p_joint_dxl_mode_arg = &joint_dxl_mode_arg;
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_mode_arg);
+    // STRING joint_dxl_mode_arg = "position_mode";
+    if(joint_dxl_mode_arg == "position_mode"){
+      void *p_joint_dxl_mode_arg = &joint_dxl_mode_arg;
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_mode_arg);
 
-    // Set joint actuator parameter
-    jointDxlId.clear();
-    jointDxlId.push_back(12);
-    STRING joint_dxl_opt_arg[2];
-    void *p_joint_dxl_opt_arg = &joint_dxl_opt_arg;
-    joint_dxl_opt_arg[0] = "Position_P_Gain";
-    joint_dxl_opt_arg[1] = "1000"; //1300
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      // Set joint actuator parameter
+      jointDxlId.clear();
+      jointDxlId.push_back(12);
+      STRING joint_dxl_opt_arg[2];
+      void *p_joint_dxl_opt_arg = &joint_dxl_opt_arg;
+      joint_dxl_opt_arg[0] = "Position_P_Gain";
+      joint_dxl_opt_arg[1] = "1000"; //1300
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_I_Gain";
-    joint_dxl_opt_arg[1] = "30";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_I_Gain";
+      joint_dxl_opt_arg[1] = "30";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_D_Gain";
-    joint_dxl_opt_arg[1] = "500";  //600
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_D_Gain";
+      joint_dxl_opt_arg[1] = "500";  //600
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    jointDxlId.clear();
-    jointDxlId.push_back(13);
-    joint_dxl_opt_arg[0] = "Position_P_Gain";
-    joint_dxl_opt_arg[1] = "850";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      jointDxlId.clear();
+      jointDxlId.push_back(13);
+      joint_dxl_opt_arg[0] = "Position_P_Gain";
+      joint_dxl_opt_arg[1] = "850";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_I_Gain";
-    joint_dxl_opt_arg[1] = "30";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_I_Gain";
+      joint_dxl_opt_arg[1] = "30";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_D_Gain";
-    joint_dxl_opt_arg[1] = "250";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_D_Gain";
+      joint_dxl_opt_arg[1] = "250";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    jointDxlId.clear();
-    jointDxlId.push_back(15);
-    joint_dxl_opt_arg[0] = "Position_P_Gain";
-    joint_dxl_opt_arg[1] = "850";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      jointDxlId.clear();
+      jointDxlId.push_back(15);
+      joint_dxl_opt_arg[0] = "Position_P_Gain";
+      joint_dxl_opt_arg[1] = "850";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_I_Gain";
-    joint_dxl_opt_arg[1] = "20";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_I_Gain";
+      joint_dxl_opt_arg[1] = "20";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
 
-    joint_dxl_opt_arg[0] = "Position_D_Gain";
-    joint_dxl_opt_arg[1] = "60";
-    setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      joint_dxl_opt_arg[0] = "Position_D_Gain";
+      joint_dxl_opt_arg[1] = "60";
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+    }
+
+    else if(joint_dxl_mode_arg=="torque_mode"){
+      void *p_joint_dxl_mode_arg = &joint_dxl_mode_arg;
+      setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_mode_arg);
+      // // Set joint actuator parameter
+      // jointDxlId.clear();
+      // jointDxlId.push_back(12);
+      // STRING joint_dxl_opt_arg[2];
+      // void *p_joint_dxl_opt_arg = &joint_dxl_opt_arg;
+      // setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+
+      // jointDxlId.clear();
+      // jointDxlId.push_back(13);
+      // setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+      // jointDxlId.clear();
+      // jointDxlId.push_back(15);
+      // setJointActuatorMode(JOINT_DYNAMIXEL, jointDxlId, p_joint_dxl_opt_arg);
+    }
+    
 
 
 

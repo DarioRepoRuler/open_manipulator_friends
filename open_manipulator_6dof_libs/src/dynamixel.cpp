@@ -31,6 +31,7 @@ using namespace robotis_manipulator;
 void JointDynamixel::init(std::vector<uint8_t> actuator_id, const void *arg)
 {
   STRING *get_arg_ = (STRING *)arg;
+  control_mode_ = "undefined";
 
   bool result = JointDynamixel::initialize(actuator_id ,get_arg_[0], get_arg_[1]);
 
@@ -44,9 +45,10 @@ void JointDynamixel::setMode(std::vector<uint8_t> actuator_id, const void *arg)
   // const char* log = NULL;
 
   STRING *get_arg_ = (STRING *)arg;
-
-  if (get_arg_[0] == "position_mode" || get_arg_[0] == "current_based_position_mode")
+  
+  if (get_arg_[0] == "position_mode" || get_arg_[0] == "current_based_position_mode" || get_arg_[0] == "torque_mode")
   {
+    control_mode_ = get_arg_[0];
     result = JointDynamixel::setOperatingMode(actuator_id, get_arg_[0]);
     if (result == false)
       return;
@@ -104,17 +106,32 @@ void JointDynamixel::disable()
 bool JointDynamixel::sendJointActuatorValue(std::vector<uint8_t> actuator_id, std::vector<robotis_manipulator::ActuatorValue> value_vector)
 {
   bool result = false;
+  if(control_mode_=="position_mode"){
+    std::vector<double> radian_vector;
+    for(uint32_t index = 0; index < value_vector.size(); index++)
+    {
+      radian_vector.push_back(value_vector.at(index).position);
+    }
+    result = JointDynamixel::writeGoalPosition(actuator_id, radian_vector);
+    if (result == false)
+      return false;
 
-  std::vector<double> radian_vector;
-  for(uint32_t index = 0; index < value_vector.size(); index++)
-  {
-    radian_vector.push_back(value_vector.at(index).position);
+    return true;
   }
-  result = JointDynamixel::writeGoalPosition(actuator_id, radian_vector);
-  if (result == false)
-    return false;
+  else if (control_mode_=="torque_mode"){
+    std::vector<double> torque_vector;
+    for(uint32_t index = 0; index < value_vector.size(); index++)
+    {
+      torque_vector.push_back(value_vector.at(index).effort);
+    }
+    result = JointDynamixel::writeGoalTorque(actuator_id, torque_vector);
+    if (result == false)
+      return false;
 
-  return true;
+    return true;
+  }
+  return false;
+  
 }
 
 std::vector<robotis_manipulator::ActuatorValue> JointDynamixel::receiveJointActuatorValue(std::vector<uint8_t> actuator_id)
@@ -282,6 +299,28 @@ bool JointDynamixel::writeGoalPosition(std::vector<uint8_t> actuator_id, std::ve
   }
 
   result = dynamixel_workbench_->syncWrite(SYNC_WRITE_HANDLER, id_array, actuator_id.size(), goal_position, 1, &log);
+  if (result == false)
+  {
+    log::error(log);
+  }
+
+  return true;
+}
+bool JointDynamixel::writeGoalTorque(std::vector<uint8_t> actuator_id, std::vector<double> torque_vector)
+{
+  bool result = false;
+  const char* log = NULL;
+
+  uint8_t id_array[actuator_id.size()];
+  int32_t goal_torque[actuator_id.size()];
+
+  for (uint8_t index = 0; index < actuator_id.size(); index++)
+  {
+    id_array[index] = actuator_id.at(index);
+    goal_torque[index] = torque_vector.at(index); // maybe we need to convert torque to value??
+  }
+
+  result = dynamixel_workbench_->syncWrite(SYNC_WRITE_HANDLER, id_array, actuator_id.size(), goal_torque, 1, &log);
   if (result == false)
   {
     log::error(log);
