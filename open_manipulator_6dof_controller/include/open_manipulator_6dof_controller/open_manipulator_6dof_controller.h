@@ -73,6 +73,8 @@ class OpenManipulatorController
   std::string controller_;
   double current_joint_position_[9];
   double current_joint_velocity_[9];
+  double current_joint_effort_[9];
+  
   // ROS Publisher
   ros::Publisher open_manipulator_states_pub_;
   std::vector<ros::Publisher> open_manipulator_kinematics_pose_pub_;

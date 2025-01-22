@@ -239,6 +239,7 @@ void OpenManipulatorController::jointStatesCallback(const sensor_msgs::JointStat
     // log::info(std::to_string(joint_position.size()));
     current_joint_position_[i] = msg.position.at(i);
     current_joint_velocity_[i] = msg.velocity.at(i);
+    current_joint_effort_[i] = msg.effort.at(i);
   }
 
   // joint_sting = "joint_position : ";
@@ -762,8 +763,23 @@ void OpenManipulatorController::publishJointStates()
 void OpenManipulatorController::publishGazeboCommand()
 {
   JointWaypoint joint_value = open_manipulator_.getAllActiveJointValue();
-  
   JointWaypoint tool_value = open_manipulator_.getAllToolValue();
+  // STRING log_string = "Joint position: "; 
+  // for(uint8_t i = 0; i < joint_value.size(); i ++){
+  //   log_string = log_string + " " + std::to_string(joint_value.at(i).position);
+  //   log_string = log_string + " " + std::to_string(joint_value.at(i).velocity);
+  //   log_string = log_string + " " + std::to_string(joint_value.at(i).effort);
+  // }
+  // log::info(log_string);
+
+  STRING log_string = "Joint value: "; 
+  for(uint8_t i = 0; i < 8; i ++){
+    // log_string = log_string + " " + std::to_string(current_joint_position_[i]);
+    // log_string = log_string + " " + std::to_string(current_joint_velocity_[i]);
+    log_string = log_string + " " + std::to_string(current_joint_effort_[i]);
+  }
+  log::info(log_string);
+
 
   if(controller_ == "position"){
     log::info("Position based control");
