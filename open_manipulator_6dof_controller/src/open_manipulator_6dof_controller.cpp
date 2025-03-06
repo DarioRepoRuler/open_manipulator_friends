@@ -886,7 +886,7 @@ int main(int argc, char **argv)
 
   std::string usb_port = "/dev/ttyUSB0";
   std::string baud_rate = "1000000";
-  std::string controller = "torque";
+  std::string controller = "position";
 
   if (argc < 3)
   {
