@@ -188,9 +188,9 @@ void OpenManipulatorController::initSubscriber()
     execute_traj_goal_sub_ = node_handle_.subscribe("/execute_trajectory/goal", 100,
                                                        &OpenManipulatorController::executeTrajGoalCallback, this);
   }
-  else {
-    open_manipulator_joint_states_sub_ = priv_node_handle_.subscribe("joint_states", 10, &OpenManipulatorController::jointStatesCallback, this);
-  }
+  // else { // TO DO: check the real implementation
+  //   open_manipulator_joint_states_sub_ = priv_node_handle_.subscribe("joint_states", 10, &OpenManipulatorController::jointStatesCallback, this);
+  // }
 }
 
 void OpenManipulatorController::initServer()
